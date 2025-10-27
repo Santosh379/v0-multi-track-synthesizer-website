@@ -2,7 +2,6 @@
 
 import { useState } from "react"
 import TrackInput from "@/components/track-input"
-import FrequencyGraph from "@/components/frequency-graph"
 import AudioPlayer from "@/components/audio-player"
 import WaveformGraph from "@/components/waveform-graph"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -40,6 +39,35 @@ export default function Home() {
     ],
   }
 
+  const HAPPY_BIRTHDAY_PRESETS = {
+    track1: [
+      { frequency: 261.63, duration: 0.5 }, // C4
+      { frequency: 261.63, duration: 0.5 }, // C4
+      { frequency: 293.66, duration: 1.0 }, // D4
+      { frequency: 261.63, duration: 1.0 }, // C4
+      { frequency: 349.23, duration: 1.0 }, // F4
+      { frequency: 329.63, duration: 2.0 }, // E4
+      { frequency: 261.63, duration: 0.5 }, // C4
+      { frequency: 261.63, duration: 0.5 }, // C4
+      { frequency: 293.66, duration: 1.0 }, // D4
+      { frequency: 261.63, duration: 1.0 }, // C4
+      { frequency: 392.0, duration: 1.0 }, // G4
+      { frequency: 349.23, duration: 2.0 }, // F4
+    ],
+    track2: [
+      { frequency: 130.81, duration: 1.0 }, // C3
+      { frequency: 146.83, duration: 1.0 }, // D3
+      { frequency: 130.81, duration: 1.0 }, // C3
+      { frequency: 174.61, duration: 1.0 }, // F3
+      { frequency: 164.81, duration: 2.0 }, // E3
+      { frequency: 130.81, duration: 1.0 }, // C3
+      { frequency: 146.83, duration: 1.0 }, // D3
+      { frequency: 130.81, duration: 1.0 }, // C3
+      { frequency: 196.0, duration: 1.0 }, // G3
+      { frequency: 174.61, duration: 2.0 }, // F3
+    ],
+  }
+
   const handleApplySoothingPreset = () => {
     if (!tracks || tracks.length < 2) {
       setError("Please add at least 2 tracks first")
@@ -51,6 +79,25 @@ export default function Home() {
         return { ...track, notes: SOOTHING_PRESETS.track1 }
       } else if (idx === 1) {
         return { ...track, notes: SOOTHING_PRESETS.track2 }
+      }
+      return track
+    })
+
+    setTracks(updatedTracks)
+    setError(null)
+  }
+
+  const handleApplyHappyBirthdayPreset = () => {
+    if (!tracks || tracks.length < 2) {
+      setError("Please add at least 2 tracks first")
+      return
+    }
+
+    const updatedTracks = tracks.map((track, idx) => {
+      if (idx === 0) {
+        return { ...track, notes: HAPPY_BIRTHDAY_PRESETS.track1 }
+      } else if (idx === 1) {
+        return { ...track, notes: HAPPY_BIRTHDAY_PRESETS.track2 }
       }
       return track
     })
@@ -164,12 +211,20 @@ export default function Home() {
                   </div>
 
                   {tracks.length >= 2 && (
-                    <Button
-                      onClick={handleApplySoothingPreset}
-                      className="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2"
-                    >
-                      🎵 Use Soothing Preset
-                    </Button>
+                    <>
+                      <Button
+                        onClick={handleApplySoothingPreset}
+                        className="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2"
+                      >
+                        🎵 Use Soothing Preset
+                      </Button>
+                      <Button
+                        onClick={handleApplyHappyBirthdayPreset}
+                        className="w-full bg-pink-600 hover:bg-pink-700 text-white font-semibold py-2"
+                      >
+                        🎂 Happy Birthday Tone
+                      </Button>
+                    </>
                   )}
 
                   <Button
@@ -236,17 +291,6 @@ export default function Home() {
                     </CardContent>
                   </Card>
 
-                  {/* Frequency Graph */}
-                  <Card className="bg-slate-800 border-slate-700">
-                    <CardHeader>
-                      <CardTitle className="text-white">Combined Frequency Analysis</CardTitle>
-                      <CardDescription>FFT spectrum of all mixed tracks</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <FrequencyGraph data={result.graph_data} />
-                    </CardContent>
-                  </Card>
-
                   {/* Statistics */}
                   <Card className="bg-slate-800 border-slate-700">
                     <CardHeader>
@@ -256,21 +300,22 @@ export default function Home() {
                       <div>
                         <p className="text-slate-400 text-sm">Duration</p>
                         <p className="text-white font-semibold">
-                          {isNaN(result.duration) ? "0.00" : (result.duration || 0).toFixed(2)}s
+                          {Number.isFinite(result.duration) ? (result.duration || 0).toFixed(2) : "0.00"}s
                         </p>
                       </div>
                       <div>
                         <p className="text-slate-400 text-sm">Sample Count</p>
                         <p className="text-white font-semibold">
-                          {isNaN(result.sample_count) ? "0" : (result.sample_count || 0).toLocaleString()}
+                          {Number.isFinite(result.sample_count) ? (result.sample_count || 0).toLocaleString() : "0"}
                         </p>
                       </div>
                       <div>
                         <p className="text-slate-400 text-sm">Peak Frequencies</p>
                         <p className="text-white font-semibold text-sm">
                           {result.graph_data?.peak_frequencies
-                            ?.slice(0, 3)
-                            .map((f: number) => (isNaN(f) ? "0.0" : f.toFixed(1)))
+                            ?.filter((f: number) => Number.isFinite(f))
+                            .slice(0, 3)
+                            .map((f: number) => f.toFixed(1))
                             .join(", ") || "N/A"}{" "}
                           Hz
                         </p>
